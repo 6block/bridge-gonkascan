@@ -1,0 +1,2 @@
+# bridge-gonkascan
+bridge.gonkascan
