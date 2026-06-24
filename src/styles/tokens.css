@@ -1,0 +1,62 @@
+/* Dark luxury design tokens — deep cool-charcoal surfaces, restrained electric
+   teal signature, semantic status colors, tabular mono for all on-chain numbers.
+   Everything is a variable; never hardcode palette/spacing/type in components. */
+:root {
+  /* ---- surfaces (layered depth) ---- */
+  --bg: oklch(15% 0.012 260);
+  --bg-grad-1: oklch(17% 0.02 265);
+  --bg-grad-2: oklch(13% 0.01 250);
+  --surface: oklch(19% 0.013 262);
+  --surface-2: oklch(22% 0.015 262);
+  --elevated: oklch(25% 0.017 263);
+  --border: oklch(100% 0 0 / 0.08);
+  --border-strong: oklch(100% 0 0 / 0.15);
+
+  /* ---- text ---- */
+  --text: oklch(97% 0.004 260);
+  --text-muted: oklch(72% 0.012 260);
+  --text-dim: oklch(56% 0.012 260);
+
+  /* ---- signature + semantic ---- */
+  --accent: oklch(74% 0.13 195);
+  --accent-strong: oklch(80% 0.15 195);
+  --accent-dim: oklch(74% 0.13 195 / 0.14);
+  --accent-glow: oklch(74% 0.13 195 / 0.32);
+  --success: oklch(75% 0.16 150);
+  --success-dim: oklch(75% 0.16 150 / 0.14);
+  --danger: oklch(66% 0.2 22);
+  --danger-dim: oklch(66% 0.2 22 / 0.16);
+  --warn: oklch(80% 0.14 75);
+  --warn-dim: oklch(80% 0.14 75 / 0.15);
+
+  /* ---- type ---- */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Menlo", monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.125rem;
+  --text-xl: clamp(1.35rem, 1.1rem + 1vw, 1.75rem);
+  --text-2xl: clamp(1.9rem, 1.4rem + 2vw, 2.75rem);
+
+  /* ---- rhythm ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 1px 0 0 oklch(100% 0 0 / 0.04) inset, 0 18px 40px -24px oklch(0% 0 0 / 0.7);
+  --shadow-pop: 0 24px 60px -20px oklch(0% 0 0 / 0.8);
+
+  --dur-fast: 140ms;
+  --dur: 240ms;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}

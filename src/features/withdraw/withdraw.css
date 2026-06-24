@@ -1,0 +1,136 @@
+.withdraw {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.wd-route {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.wd-route__leg {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.wd-route__leg--to {
+  margin-left: auto;
+  text-align: right;
+}
+.wd-route__chain {
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+.wd-route__sub {
+  font-size: var(--text-xs);
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+.wd-route__arrow {
+  color: var(--accent);
+  font-size: var(--text-lg);
+}
+
+.wd-warn {
+  color: var(--warn);
+  font-size: var(--text-sm);
+}
+
+.wd-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.wd-steps {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.wd-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-dim);
+}
+.wd-step__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text-dim);
+}
+.wd-step--active {
+  color: var(--text);
+}
+.wd-step--active .wd-step__dot {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+  animation: wd-pulse 1.2s var(--ease) infinite;
+}
+.wd-step--done {
+  color: var(--text-muted);
+}
+.wd-step--done .wd-step__dot {
+  border-color: var(--success);
+  background: var(--success);
+}
+@keyframes wd-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.wd-note {
+  font-size: var(--text-sm);
+}
+.wd-txlink {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  align-self: flex-start;
+}
+
+.wd-done,
+.wd-err {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  font-size: var(--text-sm);
+}
+.wd-err {
+  color: var(--danger);
+}
+.wd-err p {
+  max-width: 52ch;
+}
+
+.wd-resume {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-start;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.wd-resume p {
+  max-width: 56ch;
+}
+.wd-resume__row {
+  display: flex;
+  gap: var(--space-2);
+}

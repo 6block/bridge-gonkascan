@@ -1,0 +1,84 @@
+.deposit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.deposit__route {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.deposit__route-leg {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.deposit__route-leg--to {
+  margin-left: auto;
+  text-align: right;
+}
+.deposit__chain {
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+.deposit__sub {
+  font-size: var(--text-xs);
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+.deposit__arrow {
+  color: var(--accent);
+  font-size: var(--text-lg);
+}
+
+.deposit__warn {
+  color: var(--warn);
+  font-size: var(--text-sm);
+}
+.deposit__hint {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.deposit__progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+.deposit__txlink {
+  font-size: var(--text-sm);
+  align-self: flex-start;
+}
+.deposit__done,
+.deposit__err {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  font-size: var(--text-sm);
+}
+.deposit__err {
+  color: var(--danger);
+}
+.deposit__err p {
+  max-width: 52ch;
+}
+.deposit__slow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  font-size: var(--text-sm);
+  color: var(--warn);
+}
+.deposit__slow p {
+  max-width: 52ch;
+  color: var(--text-muted);
+}

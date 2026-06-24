@@ -1,0 +1,170 @@
+/* Shared UI primitives — card surfaces, buttons, pills. */
+
+.card {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+}
+.card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.card__title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0.6rem 1.05rem;
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  border: 1px solid var(--border-strong);
+  background: var(--elevated);
+  color: var(--text);
+  transition:
+    transform var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
+}
+.btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+.btn:disabled {
+  opacity: 0.5;
+}
+.btn--primary {
+  background: linear-gradient(180deg, var(--accent-strong), var(--accent));
+  border-color: transparent;
+  color: oklch(18% 0.02 230);
+  box-shadow: 0 8px 24px -10px var(--accent-glow);
+}
+.btn--primary:hover:not(:disabled) {
+  box-shadow: 0 12px 30px -8px var(--accent-glow);
+}
+.btn--ghost {
+  background: transparent;
+  border-color: var(--border);
+}
+.btn--sm {
+  padding: 0.4rem 0.7rem;
+  font-size: var(--text-xs);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+}
+.pill__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+.pill--ok {
+  color: var(--success);
+  background: var(--success-dim);
+  border-color: transparent;
+}
+.pill--bad {
+  color: var(--danger);
+  background: var(--danger-dim);
+  border-color: transparent;
+}
+.pill--warn {
+  color: var(--warn);
+  background: var(--warn-dim);
+  border-color: transparent;
+}
+.pill--accent {
+  color: var(--accent-strong);
+  background: var(--accent-dim);
+  border-color: transparent;
+}
+
+/* token amount field */
+.taf {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  padding: var(--space-3) var(--space-4);
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.taf:focus-within {
+  border-color: var(--accent);
+}
+.taf--disabled {
+  opacity: 0.55;
+}
+.taf__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.taf__input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1.4rem;
+  font-weight: 600;
+  outline: none;
+}
+.taf__input::placeholder {
+  color: var(--text-dim);
+}
+.taf__select {
+  background: var(--elevated);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  padding: 0.35rem 0.7rem;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.taf__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-dim);
+}
+.taf__max {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+}
+.taf__max:disabled {
+  color: var(--text-dim);
+}

@@ -1,0 +1,77 @@
+.walletbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.wchip {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.2;
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.wchip__kind {
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.wchip__addr {
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.walletbar__disc {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  background: var(--surface);
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.walletbar__disc:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.guard-banner {
+  border: 1px solid var(--danger);
+  background: var(--danger-dim);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+.guard-banner__title {
+  font-weight: 700;
+  color: var(--danger);
+  margin-bottom: var(--space-2);
+}
+.guard-banner__body {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  max-width: 64ch;
+}
+.guard-banner__rows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  margin: var(--space-4) 0 var(--space-3);
+}
+.guard-banner__rows > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.guard-banner__k {
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.guard-banner__fix {
+  font-size: var(--text-sm);
+  color: var(--text);
+}
