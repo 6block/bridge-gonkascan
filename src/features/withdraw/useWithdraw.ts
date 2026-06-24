@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BrowserProvider } from "ethers";
-import { SEPOLIA, type BridgeToken } from "@/config/chains";
+import { EVM, type BridgeToken } from "@/config/chains";
 import { executeBurnWithdraw, executeNativeBridgeMint } from "@/lib/burn";
 import {
   getBlsEpoch,
@@ -67,6 +67,7 @@ export function useWithdraw(
   provider: BrowserProvider | null,
   gonkaAddress: string | null,
   evmRecipient: string | null,
+  guardOk: boolean,
 ) {
   const [state, setState] = useState<State>({
     status: "idle",
@@ -156,9 +157,12 @@ export function useWithdraw(
       if (!provider) throw new Error("Connect MetaMask");
       if (p.epochId === null || !p.signatureHex) throw new Error("Missing signature/epoch");
       await ensureEpoch(p.epochId);
-      setState((s) => ({ ...s, status: "withdrawing", note: "Releasing tokens on Sepolia…" }));
+      setState((s) => ({ ...s, status: "withdrawing", note: `Releasing tokens on ${EVM.name}…` }));
+      // Use the token identity captured in the pending record, NOT the currently
+      // selected token — on resume they can differ, which would call the wrong
+      // contract method and strand the funds.
       const ethereumTxHash =
-        token.kind === "native"
+        p.tokenKind === "native"
           ? await submitMint(provider, {
               epochId: p.epochId,
               requestId: p.requestIdHex,
@@ -170,7 +174,7 @@ export function useWithdraw(
               epochId: p.epochId,
               requestId: p.requestIdHex,
               recipient: p.destinationEth,
-              tokenContract: token.erc20,
+              tokenContract: p.tokenErc20,
               amount: BigInt(p.amount),
               signature: p.signatureHex,
             });
@@ -178,7 +182,7 @@ export function useWithdraw(
       if (gonkaAddress) clearPending(gonkaAddress);
       setState({ status: "success", pending: done, ethereumTxHash, note: null, error: null });
     },
-    [provider, token.erc20, gonkaAddress, ensureEpoch],
+    [provider, gonkaAddress, ensureEpoch],
   );
 
   const runFrom = useCallback(
@@ -206,6 +210,7 @@ export function useWithdraw(
     async (amountBase: bigint) => {
       if (!gonkaAddress) return setError("Connect Keplr first");
       if (!evmRecipient) return setError("Connect MetaMask first");
+      if (!guardOk) return setError("Address mismatch — bridging is blocked");
       if (amountBase <= 0n) return setError("Enter an amount");
       cancelled.current = false;
       setState((s) => ({ ...s, status: "burning", error: null, note: "Confirm the burn in Keplr…" }));
@@ -216,18 +221,21 @@ export function useWithdraw(
                 sender: gonkaAddress,
                 amount: amountBase,
                 ethRecipient: evmRecipient,
-                bridgeAddress: SEPOLIA.bridgeAddress,
-                chainId: SEPOLIA.registryKey,
+                bridgeAddress: EVM.bridgeAddress,
+                chainId: EVM.registryKey,
               })
             : await executeBurnWithdraw({
                 cw20: token.cw20,
                 sender: gonkaAddress,
                 amount: amountBase,
                 ethRecipient: evmRecipient,
-                bridgeAddress: SEPOLIA.bridgeAddress,
+                bridgeAddress: EVM.bridgeAddress,
               });
         const p: PendingWithdraw = {
           tokenSymbol: token.symbol,
+          tokenKind: token.kind,
+          tokenErc20: token.erc20,
+          tokenDecimals: token.decimals,
           amount: amountBase.toString(),
           destinationEth: evmRecipient,
           gonkaTxHash: txHash,
@@ -244,7 +252,7 @@ export function useWithdraw(
         setState((s) => ({ ...s, status: "error", error: humanizeBurnError(err, gonkaAddress) }));
       }
     },
-    [gonkaAddress, evmRecipient, token, persist, runFrom],
+    [gonkaAddress, evmRecipient, guardOk, token, persist, runFrom],
   );
 
   const resume = useCallback(() => {

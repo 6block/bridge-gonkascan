@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getReadProvider, readBridgeState, type BridgeState } from "@/lib/evm";
 import { getBridgeAddresses, getCurrentGonkaEpoch, type BridgeAddressEntry } from "@/lib/gonka";
-import { SEPOLIA } from "@/config/chains";
+import { EVM } from "@/config/chains";
 
 export interface BridgeStatus {
   bridge: BridgeState;
@@ -26,7 +26,7 @@ export function useBridgeStatus(): State & { refresh: () => void } {
       const [bridge, gonkaEpoch, registered] = await Promise.all([
         readBridgeState(getReadProvider()),
         getCurrentGonkaEpoch(),
-        getBridgeAddresses(SEPOLIA.registryKey),
+        getBridgeAddresses(EVM.registryKey),
       ]);
       const epochInSync =
         gonkaEpoch === null ? null : Number(bridge.latestEpochId) >= gonkaEpoch;

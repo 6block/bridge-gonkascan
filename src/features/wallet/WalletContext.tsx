@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { BrowserProvider, getAddress } from "ethers";
-import { ensureSepolia, getInjectedProvider } from "@/lib/evm";
+import { ensureEvmNetwork, getInjectedProvider } from "@/lib/evm";
 import { connectKeplr } from "@/lib/cosmos";
 import { checkAddressMatch, type AddressGuardResult } from "@/lib/addressGuard";
 
@@ -71,7 +71,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     try {
       const provider = getInjectedProvider();
       await provider.send("eth_requestAccounts", []);
-      await ensureSepolia(provider);
+      await ensureEvmNetwork(provider);
       const signer = await provider.getSigner();
       setEvm({ address: await signer.getAddress(), provider });
       setFlag(EVM_FLAG, true);

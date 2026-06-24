@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Pill } from "@/components/ui/Pill";
 import { TokenAmountField } from "@/components/ui/TokenAmountField";
-import { SEPOLIA, TOKENS, tokenBySymbol } from "@/config/chains";
+import { EVM, TOKENS, tokenBySymbol } from "@/config/chains";
 import { formatUnits, parseUnits, truncate } from "@/lib/format";
 import { useWallet } from "@/features/wallet/WalletContext";
 import { useBalances } from "./useBalances";
@@ -22,6 +22,7 @@ export function DepositForm() {
     token,
     evm?.provider ?? null,
     gonka?.address ?? null,
+    Boolean(guard?.match),
   );
 
   const { parsed, parseError } = useMemo(() => {
@@ -55,13 +56,13 @@ export function DepositForm() {
         amount={amount}
         onAmountChange={setAmount}
         balance={balances.evm}
-        balanceLabel="Sepolia balance"
+        balanceLabel={`${EVM.name} balance`}
         disabled={busy}
       />
 
       <div className="deposit__route">
         <span className="deposit__route-leg">
-          <span className="deposit__chain">Sepolia</span>
+          <span className="deposit__chain">{EVM.name}</span>
           <span className="deposit__sub">{token.symbol}</span>
         </span>
         <span className="deposit__arrow">→</span>
@@ -74,7 +75,7 @@ export function DepositForm() {
       </div>
 
       {parseError && <p className="deposit__warn">{parseError}</p>}
-      {overBalance && <p className="deposit__warn">Amount exceeds your Sepolia balance.</p>}
+      {overBalance && <p className="deposit__warn">Amount exceeds your {EVM.name} balance.</p>}
 
       {blocker ? (
         <Button variant="ghost" disabled>
@@ -115,7 +116,7 @@ function statusLabel(status: string, sym: string): string {
     case "submitting":
       return "Confirm in MetaMask…";
     case "pending":
-      return "Transferring on Sepolia…";
+      return `Transferring on ${EVM.name}…`;
     case "crediting":
       return "Waiting for Gonka credit…";
     default:
@@ -153,7 +154,7 @@ function DepositProgress({
       {txHash && (
         <a
           className="deposit__txlink mono"
-          href={`${SEPOLIA.explorer}/tx/${txHash}`}
+          href={`${EVM.explorer}/tx/${txHash}`}
           target="_blank"
           rel="noreferrer"
         >

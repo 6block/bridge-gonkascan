@@ -4,7 +4,7 @@ import { AddressGuardBanner } from "@/features/wallet/AddressGuardBanner";
 import { StatusPanel } from "@/features/status/StatusPanel";
 import { BridgePanel } from "@/features/bridge/BridgePanel";
 import { Pill } from "@/components/ui/Pill";
-import { GONKA } from "@/config/chains";
+import { EVM, GONKA } from "@/config/chains";
 import "./App.css";
 
 function Shell() {
@@ -32,8 +32,8 @@ function Shell() {
             <span className="hero__accent">Gonka</span>
           </h1>
           <p className="hero__sub">
-            Bridge GNK, USDC, and USDT between Sepolia and the Gonka network, secured by validator
-            BLS threshold signatures.
+            Bridge GNK, USDC, and USDT between {EVM.name} and the Gonka network, secured by
+            validator BLS threshold signatures.
           </p>
         </section>
 

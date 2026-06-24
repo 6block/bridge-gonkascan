@@ -1,11 +1,11 @@
-import { GONKA } from "@/config/chains";
+import { GONKA, NETWORK } from "@/config/chains";
 
 // Keplr ChainInfo for the Gonka testnet. The non-standard coinType 1200 must be
 // declared here so Keplr derives the same account the chain expects; getting
 // this wrong is the address-mismatch fund-loss mode (see addressGuard.ts).
 export const GONKA_CHAIN_INFO = {
   chainId: GONKA.chainId,
-  chainName: "Gonka Testnet",
+  chainName: NETWORK === "mainnet" ? "Gonka" : "Gonka Testnet",
   rpc: GONKA.rpc,
   rest: GONKA.rest,
   bip44: { coinType: GONKA.coinType },

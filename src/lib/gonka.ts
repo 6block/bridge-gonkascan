@@ -43,11 +43,12 @@ export async function getCurrentGonkaEpoch(): Promise<number | null> {
     const data = await getJson<Record<string, any>>(
       `${GONKA.rest}/productscience/inference/inference/current_epoch_group_data`,
     );
+    // epoch_index is the canonical epoch counter (probe-verified to match the
+    // bridge contract's epochId on both testnet and mainnet). Prefer it.
     const raw =
-      data?.epoch_group_data?.epoch_id ??
       data?.epoch_group_data?.epoch_index ??
-      data?.epoch_id ??
-      data?.epoch?.id;
+      data?.epoch_group_data?.epoch_id ??
+      data?.epoch_index;
     const n = Number(raw);
     return Number.isFinite(n) ? n : null;
   } catch {

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Pill } from "@/components/ui/Pill";
 import { TokenAmountField } from "@/components/ui/TokenAmountField";
-import { SEPOLIA, TOKENS, tokenBySymbol } from "@/config/chains";
+import { EVM, TOKENS, tokenBySymbol } from "@/config/chains";
 import { formatUnits, parseUnits, truncate } from "@/lib/format";
 import { getNativeGnkBalance } from "@/lib/gonka";
 import { useWallet } from "@/features/wallet/WalletContext";
@@ -24,7 +24,13 @@ export function WithdrawForm() {
   const token = tokenBySymbol(symbol) ?? TOKENS[0];
 
   const balances = useBalances(token, evm?.address ?? null, gonka?.address ?? null);
-  const w = useWithdraw(token, evm?.provider ?? null, gonka?.address ?? null, evm?.address ?? null);
+  const w = useWithdraw(
+    token,
+    evm?.provider ?? null,
+    gonka?.address ?? null,
+    evm?.address ?? null,
+    Boolean(guard?.match),
+  );
 
   // Pre-check native GNK: a freshly-bridged account holds only CW20 and can't
   // pay gas for the burn, so warn before the user hits a failed signature.
@@ -56,7 +62,7 @@ export function WithdrawForm() {
   const blocker = !gonka
     ? "Connect Keplr to withdraw"
     : !evm
-      ? "Connect MetaMask to set your Sepolia recipient"
+      ? `Connect MetaMask to set your ${EVM.name} recipient`
       : !guard?.match
         ? "Address mismatch — resolve the warning above"
         : null;
@@ -71,9 +77,12 @@ export function WithdrawForm() {
         <div className="wd-resume">
           <Pill tone="warn">interrupted withdrawal</Pill>
           <p>
-            A withdrawal of <span className="mono">{formatUnits(resumable.amount, token.decimals)}</span>{" "}
+            A withdrawal of{" "}
+            <span className="mono">{formatUnits(resumable.amount, resumable.tokenDecimals)}</span>{" "}
             {resumable.tokenSymbol} is still in progress (
-            {resumable.step === "polling" ? "awaiting BLS signature" : "ready to release on Sepolia"}
+            {resumable.step === "polling"
+              ? "awaiting BLS signature"
+              : `ready to release on ${EVM.name}`}
             ). Resume it before starting a new one.
           </p>
           <div className="wd-resume__row">
@@ -109,7 +118,7 @@ export function WithdrawForm() {
         </span>
         <span className="wd-route__arrow">→</span>
         <span className="wd-route__leg wd-route__leg--to">
-          <span className="wd-route__chain">Sepolia</span>
+          <span className="wd-route__chain">{EVM.name}</span>
           <span className="wd-route__sub">{evm ? truncate(evm.address, 8, 6) : "connect MetaMask"}</span>
         </span>
       </div>
@@ -147,8 +156,10 @@ export function WithdrawForm() {
         gonkaTxHash={w.pending?.gonkaTxHash ?? null}
         ethereumTxHash={w.ethereumTxHash}
         error={w.error}
-        amount={w.pending ? formatUnits(w.pending.amount, token.decimals) : null}
-        symbol={token.symbol}
+        amount={w.pending ? formatUnits(w.pending.amount, w.pending.tokenDecimals) : null}
+        symbol={w.pending?.tokenSymbol ?? token.symbol}
+        recoverable={Boolean(w.pending && w.pending.step !== "done")}
+        onRetry={w.resume}
         onDone={() => {
           setAmount("");
           balances.refresh();
@@ -182,6 +193,8 @@ function WithdrawProgress({
   error,
   amount,
   symbol,
+  recoverable,
+  onRetry,
   onDone,
 }: {
   status: WithdrawStatus;
@@ -191,6 +204,8 @@ function WithdrawProgress({
   error: string | null;
   amount: string | null;
   symbol: string;
+  recoverable: boolean;
+  onRetry: () => void;
   onDone: () => void;
 }) {
   if (status === "idle") return null;
@@ -204,7 +219,11 @@ function WithdrawProgress({
           done={status === "withdrawing" || status === "success"}
           active={status === "polling" || status === "catchup"}
         />
-        <Step label="Release on Sepolia" done={status === "success"} active={status === "withdrawing"} />
+        <Step
+          label={`Release on ${EVM.name}`}
+          done={status === "success"}
+          active={status === "withdrawing"}
+        />
       </ol>
 
       {note && status !== "success" && status !== "error" && (
@@ -221,7 +240,7 @@ function WithdrawProgress({
       {ethereumTxHash && (
         <a
           className="wd-txlink mono"
-          href={`${SEPOLIA.explorer}/tx/${ethereumTxHash}`}
+          href={`${EVM.explorer}/tx/${ethereumTxHash}`}
           target="_blank"
           rel="noreferrer"
         >
@@ -233,21 +252,37 @@ function WithdrawProgress({
         <div className="wd-done">
           <Pill tone="ok">released</Pill>
           <span>
-            <span className="mono">{amount}</span> {symbol} sent to your Sepolia address
+            <span className="mono">{amount}</span> {symbol} sent to your {EVM.name} address
           </span>
           <Button size="sm" variant="ghost" onClick={onDone}>
             New withdrawal
           </Button>
         </div>
       )}
-      {status === "error" && (
-        <div className="wd-err">
-          <p>{error}</p>
-          <Button size="sm" variant="ghost" onClick={onDone}>
-            Dismiss
-          </Button>
-        </div>
-      )}
+      {status === "error" &&
+        (recoverable ? (
+          <div className="wd-err">
+            <p>
+              {error} Your tokens are already burned and the signature is ready — retry to release
+              them (this won't burn again).
+            </p>
+            <div className="wd-resume__row">
+              <Button size="sm" variant="primary" onClick={onRetry}>
+                Retry release
+              </Button>
+              <Button size="sm" variant="ghost" onClick={onDone}>
+                Discard
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="wd-err">
+            <p>{error}</p>
+            <Button size="sm" variant="ghost" onClick={onDone}>
+              Dismiss
+            </Button>
+          </div>
+        ))}
     </div>
   );
 }

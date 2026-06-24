@@ -3,7 +3,11 @@
 import type { Eip1193Provider } from "ethers";
 
 interface ImportMetaEnv {
-  readonly VITE_SEPOLIA_RPC_URL?: string;
+  /** "testnet" (default) | "mainnet" — selects the network preset. */
+  readonly VITE_NETWORK?: string;
+  /** Override the active EVM chain's JSON-RPC URL. */
+  readonly VITE_EVM_RPC_URL?: string;
+  /** Override the active Gonka host (chain RPC + REST + BLS live here). */
   readonly VITE_GONKA_HOST?: string;
 }
 interface ImportMeta {

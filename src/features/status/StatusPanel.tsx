@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Pill } from "@/components/ui/Pill";
-import { SEPOLIA } from "@/config/chains";
+import { EVM } from "@/config/chains";
 import { truncate } from "@/lib/format";
 import { useBridgeStatus } from "@/hooks/useBridgeStatus";
 import "./status.css";
@@ -24,14 +24,14 @@ export function StatusPanel() {
 
       {data && (
         <div className="status__grid">
-          <Row label="Contract (Sepolia)">
+          <Row label={`Contract (${EVM.name})`}>
             <a
               className="mono"
-              href={`${SEPOLIA.explorer}/address/${SEPOLIA.bridgeAddress}`}
+              href={`${EVM.explorer}/address/${EVM.bridgeAddress}`}
               target="_blank"
               rel="noreferrer"
             >
-              {truncate(SEPOLIA.bridgeAddress, 10, 8)}
+              {truncate(EVM.bridgeAddress, 10, 8)}
             </a>
           </Row>
 

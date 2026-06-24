@@ -6,14 +6,14 @@ import {
   type Provider,
   type Signer,
 } from "ethers";
-import { SEPOLIA } from "@/config/chains";
+import { EVM } from "@/config/chains";
 import bridgeAbi from "@/abi/BridgeContract.json";
 
 export const ContractState = { ADMIN_CONTROL: 0n, NORMAL_OPERATION: 1n } as const;
 
-/** Read-only provider against a public Sepolia RPC (no wallet needed). */
+/** Read-only provider against the active EVM chain's RPC (no wallet needed). */
 export function getReadProvider(): JsonRpcProvider {
-  return new JsonRpcProvider(SEPOLIA.rpcUrl, SEPOLIA.chainIdNum);
+  return new JsonRpcProvider(EVM.rpcUrl, EVM.chainIdNum);
 }
 
 export function getInjectedProvider(): BrowserProvider {
@@ -22,7 +22,7 @@ export function getInjectedProvider(): BrowserProvider {
 }
 
 export function getBridgeContract(runner: Provider | Signer): Contract {
-  return new Contract(SEPOLIA.bridgeAddress, bridgeAbi, runner);
+  return new Contract(EVM.bridgeAddress, bridgeAbi, runner);
 }
 
 export function getErc20Contract(address: string, runner: Provider | Signer): Contract {
@@ -35,22 +35,22 @@ export function getErc20Contract(address: string, runner: Provider | Signer): Co
   return new Contract(address, abi, runner);
 }
 
-/** Ensure the injected wallet is on Sepolia; switches (and adds) if needed. */
-export async function ensureSepolia(provider: BrowserProvider): Promise<void> {
+/** Ensure the injected wallet is on the active EVM chain; switches (adds) if needed. */
+export async function ensureEvmNetwork(provider: BrowserProvider): Promise<void> {
   const net = await provider.getNetwork();
-  if (net.chainId === BigInt(SEPOLIA.chainIdNum)) return;
+  if (net.chainId === BigInt(EVM.chainIdNum)) return;
   try {
-    await provider.send("wallet_switchEthereumChain", [{ chainId: SEPOLIA.chainIdHex }]);
+    await provider.send("wallet_switchEthereumChain", [{ chainId: EVM.chainIdHex }]);
   } catch (err: unknown) {
     // 4902 = chain not added to the wallet yet.
     if ((err as { code?: number })?.code === 4902) {
       await provider.send("wallet_addEthereumChain", [
         {
-          chainId: SEPOLIA.chainIdHex,
-          chainName: "Sepolia",
-          nativeCurrency: { name: "Sepolia ETH", symbol: "ETH", decimals: 18 },
-          rpcUrls: [SEPOLIA.rpcUrl],
-          blockExplorerUrls: [SEPOLIA.explorer],
+          chainId: EVM.chainIdHex,
+          chainName: EVM.name,
+          nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+          rpcUrls: [EVM.rpcUrl],
+          blockExplorerUrls: [EVM.explorer],
         },
       ]);
     } else {
@@ -107,7 +107,7 @@ export async function submitWithdraw(
   provider: BrowserProvider,
   cmd: WithdrawCommand,
 ): Promise<string> {
-  await ensureSepolia(provider);
+  await ensureEvmNetwork(provider);
   const signer = await provider.getSigner();
   const bridge = getBridgeContract(signer);
   try {
@@ -129,7 +129,7 @@ export interface MintCommand {
 
 /** Mint WGNK on Sepolia for a native-GNK bridge (no tokenContract — WGNK is the bridge). */
 export async function submitMint(provider: BrowserProvider, cmd: MintCommand): Promise<string> {
-  await ensureSepolia(provider);
+  await ensureEvmNetwork(provider);
   const signer = await provider.getSigner();
   const bridge = getBridgeContract(signer);
   try {
@@ -148,7 +148,7 @@ export async function submitGroupKey(
   groupKeyHex: string,
   validationSigHex: string,
 ): Promise<string> {
-  await ensureSepolia(provider);
+  await ensureEvmNetwork(provider);
   const signer = await provider.getSigner();
   const bridge = getBridgeContract(signer);
   try {
@@ -162,7 +162,16 @@ export async function submitGroupKey(
 
 /** Best-effort decode of a revert into a readable bridge error, else raw message. */
 export function decodeBridgeError(err: unknown): string {
-  const e = err as { data?: string; info?: { error?: { data?: string } }; message?: string };
+  const e = err as {
+    code?: string | number;
+    data?: string;
+    info?: { error?: { code?: number; data?: string } };
+    message?: string;
+  };
+  // User cancelled the wallet prompt — not a failure, surface it gently.
+  if (e?.code === "ACTION_REJECTED" || e?.info?.error?.code === 4001) {
+    return "You cancelled the transaction in MetaMask.";
+  }
   const data = e?.data ?? e?.info?.error?.data;
   if (typeof data === "string" && data.startsWith("0x") && data.length >= 10) {
     const named = BRIDGE_ERROR_SELECTORS[data.slice(0, 10)];
