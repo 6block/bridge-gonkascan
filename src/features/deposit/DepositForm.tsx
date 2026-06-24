@@ -34,7 +34,7 @@ export function DepositForm() {
   }, [amount, token.decimals]);
 
   const busy = BUSY.has(status);
-  const overBalance = parsed !== null && balances.erc20 !== null && parsed > balances.erc20;
+  const overBalance = parsed !== null && balances.evm !== null && parsed > balances.evm;
   const ready = Boolean(evm && gonka && guard?.match);
   const canDeposit = ready && parsed !== null && parsed > 0n && !overBalance && !busy;
 
@@ -54,7 +54,7 @@ export function DepositForm() {
         onTokenChange={setSymbol}
         amount={amount}
         onAmountChange={setAmount}
-        balance={balances.erc20}
+        balance={balances.evm}
         balanceLabel="Sepolia balance"
         disabled={busy}
       />
@@ -83,6 +83,7 @@ export function DepositForm() {
       ) : (
         <Button
           variant="primary"
+          loading={busy}
           disabled={!canDeposit}
           onClick={() => parsed && deposit(parsed)}
         >
@@ -97,7 +98,7 @@ export function DepositForm() {
         symbol={token.symbol}
         error={error}
         gonkaBalance={
-          balances.cw20 === null ? null : formatUnits(balances.cw20, token.decimals)
+          balances.gonka === null ? null : formatUnits(balances.gonka, token.decimals)
         }
         onDone={() => {
           setAmount("");

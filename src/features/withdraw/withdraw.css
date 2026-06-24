@@ -119,6 +119,21 @@
   max-width: 52ch;
 }
 
+.wd-gas {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--warn-dim);
+  font-size: var(--text-sm);
+}
+.wd-gas p {
+  color: var(--text-muted);
+  max-width: 52ch;
+}
+
 .wd-resume {
   display: flex;
   flex-direction: column;

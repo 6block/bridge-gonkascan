@@ -1,45 +1,47 @@
 import { useCallback, useEffect, useState } from "react";
 import { getErc20Contract, getReadProvider } from "@/lib/evm";
-import { getCw20Balance } from "@/lib/gonka";
+import { getCw20Balance, getNativeGnkBalance } from "@/lib/gonka";
 import type { BridgeToken } from "@/config/chains";
 
 export interface TokenBalances {
-  /** Sepolia ERC-20 balance (base units), null until loaded. */
-  erc20: bigint | null;
-  /** Gonka CW20 wrapped balance (base units), null until loaded. */
-  cw20: bigint | null;
+  /** Ethereum-side balance (Sepolia ERC-20 / WGNK), base units, null until loaded. */
+  evm: bigint | null;
+  /** Gonka-side balance (CW20 wrapped, or native GNK), base units, null until loaded. */
+  gonka: bigint | null;
 }
 
 /**
  * Live balances for one token across both chains. `evmAddress` is the MetaMask
- * account; `gonkaAddress` is the connected Keplr account (the deposit credit
- * target — see Phase 2 derivation note).
+ * account; `gonkaAddress` is the connected Keplr account.
  */
 export function useBalances(
   token: BridgeToken,
   evmAddress: string | null,
   gonkaAddress: string | null,
 ): TokenBalances & { refresh: () => void } {
-  const [balances, setBalances] = useState<TokenBalances>({ erc20: null, cw20: null });
+  const [balances, setBalances] = useState<TokenBalances>({ evm: null, gonka: null });
 
   const load = useCallback(async () => {
-    const next: TokenBalances = { erc20: null, cw20: null };
+    const next: TokenBalances = { evm: null, gonka: null };
     await Promise.all([
       (async () => {
         if (!evmAddress) return;
         try {
           const c = getErc20Contract(token.erc20, getReadProvider());
-          next.erc20 = (await c.balanceOf(evmAddress)) as bigint;
+          next.evm = (await c.balanceOf(evmAddress)) as bigint;
         } catch {
-          next.erc20 = null;
+          next.evm = null;
         }
       })(),
       (async () => {
         if (!gonkaAddress) return;
         try {
-          next.cw20 = BigInt(await getCw20Balance(token.cw20, gonkaAddress));
+          next.gonka =
+            token.kind === "native"
+              ? await getNativeGnkBalance(gonkaAddress)
+              : BigInt(await getCw20Balance(token.cw20, gonkaAddress));
         } catch {
-          next.cw20 = null;
+          next.gonka = null;
         }
       })(),
     ]);
@@ -48,6 +50,8 @@ export function useBalances(
 
   useEffect(() => {
     void load();
+    const id = setInterval(() => void load(), 15_000);
+    return () => clearInterval(id);
   }, [load]);
 
   return { ...balances, refresh: () => void load() };

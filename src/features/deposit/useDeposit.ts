@@ -2,7 +2,13 @@ import { useCallback, useRef, useState } from "react";
 import type { BrowserProvider } from "ethers";
 import { SEPOLIA, type BridgeToken } from "@/config/chains";
 import { ensureSepolia, getErc20Contract } from "@/lib/evm";
-import { getCw20Balance } from "@/lib/gonka";
+import { getCw20Balance, getNativeGnkBalance } from "@/lib/gonka";
+
+/** Gonka-side balance for credit detection — CW20 smart query or native bank. */
+async function gonkaBalanceOf(token: BridgeToken, addr: string): Promise<bigint> {
+  if (token.kind === "native") return getNativeGnkBalance(addr);
+  return BigInt(await getCw20Balance(token.cw20, addr));
+}
 
 export type DepositStatus =
   | "idle"
@@ -49,7 +55,7 @@ export function useDeposit(token: BridgeToken, provider: BrowserProvider | null,
         // Baseline the Gonka wrapped balance so we can detect the credit.
         let baseline = 0n;
         try {
-          baseline = BigInt(await getCw20Balance(token.cw20, gonkaAddress));
+          baseline = await gonkaBalanceOf(token, gonkaAddress);
         } catch {
           baseline = 0n;
         }
@@ -69,7 +75,7 @@ export function useDeposit(token: BridgeToken, provider: BrowserProvider | null,
           await sleep(POLL_INTERVAL_MS);
           let current = baseline;
           try {
-            current = BigInt(await getCw20Balance(token.cw20, gonkaAddress));
+            current = await gonkaBalanceOf(token, gonkaAddress);
           } catch {
             continue;
           }

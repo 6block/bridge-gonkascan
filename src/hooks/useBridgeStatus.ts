@@ -20,8 +20,8 @@ interface State {
 export function useBridgeStatus(): State & { refresh: () => void } {
   const [state, setState] = useState<State>({ data: null, loading: true, error: null });
 
-  const load = useCallback(async () => {
-    setState((s) => ({ ...s, loading: true, error: null }));
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setState((s) => ({ ...s, loading: true, error: null }));
     try {
       const [bridge, gonkaEpoch, registered] = await Promise.all([
         readBridgeState(getReadProvider()),
@@ -42,6 +42,8 @@ export function useBridgeStatus(): State & { refresh: () => void } {
 
   useEffect(() => {
     void load();
+    const id = setInterval(() => void load(true), 30_000);
+    return () => clearInterval(id);
   }, [load]);
 
   return { ...state, refresh: () => void load() };

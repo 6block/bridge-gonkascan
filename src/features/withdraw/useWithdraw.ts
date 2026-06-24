@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BrowserProvider } from "ethers";
 import { SEPOLIA, type BridgeToken } from "@/config/chains";
-import { executeBurnWithdraw } from "@/lib/burn";
+import { executeBurnWithdraw, executeNativeBridgeMint } from "@/lib/burn";
 import {
   getBlsEpoch,
   getBlsSignature,
@@ -13,6 +13,7 @@ import {
   getReadProvider,
   readBridgeState,
   submitGroupKey,
+  submitMint,
   submitWithdraw,
 } from "@/lib/evm";
 import { toBareHex } from "@/lib/requestId";
@@ -156,14 +157,23 @@ export function useWithdraw(
       if (p.epochId === null || !p.signatureHex) throw new Error("Missing signature/epoch");
       await ensureEpoch(p.epochId);
       setState((s) => ({ ...s, status: "withdrawing", note: "Releasing tokens on Sepolia…" }));
-      const ethereumTxHash = await submitWithdraw(provider, {
-        epochId: p.epochId,
-        requestId: p.requestIdHex,
-        recipient: p.destinationEth,
-        tokenContract: token.erc20,
-        amount: BigInt(p.amount),
-        signature: p.signatureHex,
-      });
+      const ethereumTxHash =
+        token.kind === "native"
+          ? await submitMint(provider, {
+              epochId: p.epochId,
+              requestId: p.requestIdHex,
+              recipient: p.destinationEth,
+              amount: BigInt(p.amount),
+              signature: p.signatureHex,
+            })
+          : await submitWithdraw(provider, {
+              epochId: p.epochId,
+              requestId: p.requestIdHex,
+              recipient: p.destinationEth,
+              tokenContract: token.erc20,
+              amount: BigInt(p.amount),
+              signature: p.signatureHex,
+            });
       const done: PendingWithdraw = { ...p, ethereumTxHash, step: "done" };
       if (gonkaAddress) clearPending(gonkaAddress);
       setState({ status: "success", pending: done, ethereumTxHash, note: null, error: null });
@@ -200,13 +210,22 @@ export function useWithdraw(
       cancelled.current = false;
       setState((s) => ({ ...s, status: "burning", error: null, note: "Confirm the burn in Keplr…" }));
       try {
-        const { txHash, requestIdHex } = await executeBurnWithdraw({
-          cw20: token.cw20,
-          sender: gonkaAddress,
-          amount: amountBase,
-          ethRecipient: evmRecipient,
-          bridgeAddress: SEPOLIA.bridgeAddress,
-        });
+        const { txHash, requestIdHex } =
+          token.kind === "native"
+            ? await executeNativeBridgeMint({
+                sender: gonkaAddress,
+                amount: amountBase,
+                ethRecipient: evmRecipient,
+                bridgeAddress: SEPOLIA.bridgeAddress,
+                chainId: SEPOLIA.registryKey,
+              })
+            : await executeBurnWithdraw({
+                cw20: token.cw20,
+                sender: gonkaAddress,
+                amount: amountBase,
+                ethRecipient: evmRecipient,
+                bridgeAddress: SEPOLIA.bridgeAddress,
+              });
         const p: PendingWithdraw = {
           tokenSymbol: token.symbol,
           amount: amountBase.toString(),

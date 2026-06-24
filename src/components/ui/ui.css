@@ -67,6 +67,20 @@
   padding: 0.4rem 0.7rem;
   font-size: var(--text-xs);
 }
+.btn__spinner {
+  width: 0.85em;
+  height: 0.85em;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  opacity: 0.85;
+  animation: btn-spin 0.7s linear infinite;
+}
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .pill {
   display: inline-flex;

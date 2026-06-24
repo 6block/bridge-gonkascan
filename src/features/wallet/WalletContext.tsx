@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { BrowserProvider } from "ethers";
+import { BrowserProvider, getAddress } from "ethers";
 import { ensureSepolia, getInjectedProvider } from "@/lib/evm";
 import { connectKeplr } from "@/lib/cosmos";
 import { checkAddressMatch, type AddressGuardResult } from "@/lib/addressGuard";
@@ -37,9 +37,20 @@ const WalletContext = createContext<WalletContextValue | null>(null);
 
 const METAMASK_INSTALL_URL = "https://metamask.io/download/";
 const KEPLR_INSTALL_URL = "https://www.keplr.app/get";
+// Remember which wallets were connected so a refresh can reconnect silently.
+const EVM_FLAG = "bridge_evm_connected";
+const GONKA_FLAG = "bridge_gonka_connected";
 
 function openInstall(url: string) {
   window.open(url, "_blank", "noopener,noreferrer");
+}
+function setFlag(key: string, on: boolean) {
+  try {
+    if (on) localStorage.setItem(key, "1");
+    else localStorage.removeItem(key);
+  } catch {
+    /* storage disabled — non-fatal */
+  }
 }
 
 export function WalletProvider({ children }: { children: ReactNode }) {
@@ -63,6 +74,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       await ensureSepolia(provider);
       const signer = await provider.getSigner();
       setEvm({ address: await signer.getAddress(), provider });
+      setFlag(EVM_FLAG, true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to connect MetaMask");
     } finally {
@@ -81,6 +93,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     try {
       const acct = await connectKeplr();
       setGonka({ address: acct.bech32Address, pubKey: acct.pubKey });
+      setFlag(GONKA_FLAG, true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to connect Keplr");
     } finally {
@@ -88,11 +101,50 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Silent reconnect on refresh — no wallet popups, no install redirects.
+  const reconnectEvm = useCallback(async () => {
+    if (!window.ethereum) return;
+    try {
+      const provider = getInjectedProvider();
+      const accounts = (await provider.send("eth_accounts", [])) as string[];
+      if (accounts?.length) setEvm({ address: getAddress(accounts[0]), provider });
+    } catch {
+      /* ignore — user can connect manually */
+    }
+  }, []);
+
+  const reconnectGonka = useCallback(async () => {
+    if (!window.keplr) return;
+    try {
+      const acct = await connectKeplr();
+      setGonka({ address: acct.bech32Address, pubKey: acct.pubKey });
+    } catch {
+      /* ignore — user can connect manually */
+    }
+  }, []);
+
   const disconnect = useCallback(() => {
     setEvm(null);
     setGonka(null);
     setError(null);
+    setFlag(EVM_FLAG, false);
+    setFlag(GONKA_FLAG, false);
   }, []);
+
+  // Auto-reconnect previously-connected wallets after a page refresh. Injected
+  // providers can arrive late, so retry once on window load if not ready.
+  useEffect(() => {
+    const tryReconnect = () => {
+      if (localStorage.getItem(EVM_FLAG) === "1") void reconnectEvm();
+      if (localStorage.getItem(GONKA_FLAG) === "1") void reconnectGonka();
+    };
+    if (document.readyState === "complete") {
+      tryReconnect();
+      return;
+    }
+    window.addEventListener("load", tryReconnect, { once: true });
+    return () => window.removeEventListener("load", tryReconnect);
+  }, [reconnectEvm, reconnectGonka]);
 
   // React to wallet account/network changes from MetaMask.
   useEffect(() => {
@@ -100,24 +152,28 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     if (!eth?.on) return;
     const onAccounts = (accounts: unknown) => {
       const list = accounts as string[];
-      if (!list || list.length === 0) setEvm(null);
-      else void connectEvm();
+      if (!list || list.length === 0) {
+        setEvm(null);
+        setFlag(EVM_FLAG, false);
+      } else {
+        void reconnectEvm();
+      }
     };
-    const onChain = () => void connectEvm();
+    const onChain = () => void reconnectEvm();
     eth.on("accountsChanged", onAccounts);
     eth.on("chainChanged", onChain);
     return () => {
       eth.removeListener?.("accountsChanged", onAccounts);
       eth.removeListener?.("chainChanged", onChain);
     };
-  }, [connectEvm]);
+  }, [reconnectEvm]);
 
   // Re-sync the Keplr account if the user switches it.
   useEffect(() => {
-    const handler = () => void connectGonka();
+    const handler = () => void reconnectGonka();
     window.addEventListener("keplr_keystorechange", handler);
     return () => window.removeEventListener("keplr_keystorechange", handler);
-  }, [connectGonka]);
+  }, [reconnectGonka]);
 
   const guard = useMemo<AddressGuardResult | null>(() => {
     if (!evm || !gonka) return null;

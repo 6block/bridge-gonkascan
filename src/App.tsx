@@ -32,8 +32,8 @@ function Shell() {
             <span className="hero__accent">Gonka</span>
           </h1>
           <p className="hero__sub">
-            Bridge USDC and USDT between Sepolia and the Gonka network, secured by validator BLS
-            threshold signatures.
+            Bridge GNK, USDC, and USDT between Sepolia and the Gonka network, secured by validator
+            BLS threshold signatures.
           </p>
         </section>
 

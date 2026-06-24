@@ -23,6 +23,19 @@ export async function getBridgeAddresses(registryKey: string): Promise<BridgeAdd
   return data.addresses ?? [];
 }
 
+// ---- native GNK balance (withdraw gas pre-check) -------------------------
+export async function getNativeGnkBalance(address: string): Promise<bigint> {
+  try {
+    const data = await getJson<{ balances?: { denom: string; amount: string }[] }>(
+      `${GONKA.rest}/cosmos/bank/v1beta1/balances/${address}`,
+    );
+    const entry = data.balances?.find((b) => b.denom === GONKA.baseDenom);
+    return entry ? BigInt(entry.amount) : 0n;
+  } catch {
+    return 0n;
+  }
+}
+
 // ---- current epoch (for the bridge epoch-sync gate) ----------------------
 // NOTE: shape confirmed at runtime in Phase 1 verification; parsed defensively.
 export async function getCurrentGonkaEpoch(): Promise<number | null> {

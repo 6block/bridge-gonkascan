@@ -119,6 +119,28 @@ export async function submitWithdraw(
   }
 }
 
+export interface MintCommand {
+  epochId: number;
+  requestId: string; // 0x hex, 32 bytes
+  recipient: string;
+  amount: bigint;
+  signature: string; // 0x hex, 128 bytes
+}
+
+/** Mint WGNK on Sepolia for a native-GNK bridge (no tokenContract — WGNK is the bridge). */
+export async function submitMint(provider: BrowserProvider, cmd: MintCommand): Promise<string> {
+  await ensureSepolia(provider);
+  const signer = await provider.getSigner();
+  const bridge = getBridgeContract(signer);
+  try {
+    const tx = await bridge.mintWithSignature(cmd);
+    const receipt = await tx.wait();
+    return receipt?.hash ?? tx.hash;
+  } catch (err) {
+    throw new Error(decodeBridgeError(err));
+  }
+}
+
 /** Defensive epoch catch-up: submit one missing group key (must be latest+1). */
 export async function submitGroupKey(
   provider: BrowserProvider,

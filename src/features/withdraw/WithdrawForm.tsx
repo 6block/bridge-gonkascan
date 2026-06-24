@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Pill } from "@/components/ui/Pill";
 import { TokenAmountField } from "@/components/ui/TokenAmountField";
 import { SEPOLIA, TOKENS, tokenBySymbol } from "@/config/chains";
 import { formatUnits, parseUnits, truncate } from "@/lib/format";
+import { getNativeGnkBalance } from "@/lib/gonka";
 import { useWallet } from "@/features/wallet/WalletContext";
 import { useBalances } from "@/features/deposit/useBalances";
 import { useWithdraw, type WithdrawStatus } from "./useWithdraw";
@@ -25,6 +26,18 @@ export function WithdrawForm() {
   const balances = useBalances(token, evm?.address ?? null, gonka?.address ?? null);
   const w = useWithdraw(token, evm?.provider ?? null, gonka?.address ?? null, evm?.address ?? null);
 
+  // Pre-check native GNK: a freshly-bridged account holds only CW20 and can't
+  // pay gas for the burn, so warn before the user hits a failed signature.
+  const [hasGas, setHasGas] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!gonka?.address) return setHasGas(null);
+    let alive = true;
+    void getNativeGnkBalance(gonka.address).then((b) => alive && setHasGas(b > 0n));
+    return () => {
+      alive = false;
+    };
+  }, [gonka?.address, w.status]);
+
   const { parsed, parseError } = useMemo(() => {
     if (!amount.trim()) return { parsed: null, parseError: null };
     try {
@@ -35,9 +48,10 @@ export function WithdrawForm() {
   }, [amount, token.decimals]);
 
   const busy = BUSY.has(w.status);
-  const overBalance = parsed !== null && balances.cw20 !== null && parsed > balances.cw20;
+  const overBalance = parsed !== null && balances.gonka !== null && parsed > balances.gonka;
+  const noGas = hasGas === false;
   const ready = Boolean(evm && gonka && guard?.match);
-  const canWithdraw = ready && parsed !== null && parsed > 0n && !overBalance && !busy;
+  const canWithdraw = ready && parsed !== null && parsed > 0n && !overBalance && !busy && !noGas;
 
   const blocker = !gonka
     ? "Connect Keplr to withdraw"
@@ -83,7 +97,7 @@ export function WithdrawForm() {
         onTokenChange={setSymbol}
         amount={amount}
         onAmountChange={setAmount}
-        balance={balances.cw20}
+        balance={balances.gonka}
         balanceLabel="Gonka balance"
         disabled={busy}
       />
@@ -102,13 +116,27 @@ export function WithdrawForm() {
 
       {parseError && <p className="wd-warn">{parseError}</p>}
       {overBalance && <p className="wd-warn">Amount exceeds your Gonka balance.</p>}
+      {ready && noGas && (
+        <div className="wd-gas">
+          <Pill tone="warn">no gas</Pill>
+          <p>
+            This Gonka account has no native GNK to pay for the burn. Send a little GNK to{" "}
+            <span className="mono">{truncate(gonka!.address, 10, 8)}</span>, then it'll unlock.
+          </p>
+        </div>
+      )}
 
       {blocker ? (
         <Button variant="ghost" disabled>
           {blocker}
         </Button>
       ) : (
-        <Button variant="primary" disabled={!canWithdraw} onClick={() => parsed && w.withdraw(parsed)}>
+        <Button
+          variant="primary"
+          loading={busy}
+          disabled={!canWithdraw}
+          onClick={() => parsed && w.withdraw(parsed)}
+        >
           {statusLabel(w.status, token.symbol)}
         </Button>
       )}

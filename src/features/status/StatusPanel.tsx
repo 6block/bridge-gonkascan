@@ -14,8 +14,8 @@ export function StatusPanel() {
     <Card
       title="Bridge status"
       action={
-        <Button variant="ghost" size="sm" onClick={refresh} disabled={loading}>
-          {loading ? "…" : "Refresh"}
+        <Button variant="ghost" size="sm" loading={loading} onClick={refresh}>
+          Refresh
         </Button>
       }
     >

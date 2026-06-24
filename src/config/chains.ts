@@ -41,11 +41,14 @@ export interface EvmChain {
 export interface BridgeToken {
   symbol: string;
   name: string;
-  /** Sepolia ERC-20 contract. */
+  /** "cw20" = foreign ERC-20 wrapped as a CW20 on Gonka (USDC/USDT). "native" =
+   *  Gonka's own GNK, wrapped as WGNK (the bridge contract itself) on Ethereum. */
+  kind: "cw20" | "native";
+  /** Ethereum ERC-20 contract. For native GNK this is the bridge/WGNK address. */
   erc20: string;
-  /** Gonka CW20 wrapped contract (bech32). */
+  /** Gonka CW20 wrapped contract (bech32). Empty for native GNK (uses bank balance). */
   cw20: string;
-  /** Decimals — identical on both sides (6 for USDC/USDT), so amounts map 1:1. */
+  /** Decimals — identical on both sides (6 for USDC/USDT, 9 for GNK/WGNK), 1:1. */
   decimals: number;
 }
 
@@ -73,8 +76,17 @@ export const SEPOLIA: EvmChain = {
 
 export const TOKENS: BridgeToken[] = [
   {
+    symbol: "GNK",
+    name: "Gonka (native ↔ WGNK)",
+    kind: "native",
+    erc20: SEPOLIA.bridgeAddress, // WGNK == the bridge contract itself
+    cw20: "",
+    decimals: 9,
+  },
+  {
     symbol: "USDC",
     name: "USD Coin (Sepolia)",
+    kind: "cw20",
     erc20: "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238",
     cw20: "gonka1ctnjk7an90lz5wjfvr3cf6x984a8cjnv8dpmztmlpcq4xteaa2xs54lu39",
     decimals: 6,
@@ -82,6 +94,7 @@ export const TOKENS: BridgeToken[] = [
   {
     symbol: "USDT",
     name: "Tether USD (Sepolia)",
+    kind: "cw20",
     erc20: "0x7169d38820dfd117c3fa1f22a697dba58d90ba06",
     cw20: "gonka1s85asu5dckeelmgzrwqakxc8tc4gllutjq4uq3a4lwak2hfp9c3qksp537",
     decimals: 6,

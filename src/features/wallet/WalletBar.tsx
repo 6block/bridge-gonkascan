@@ -21,14 +21,14 @@ export function WalletBar() {
       {evm ? (
         <WalletChip kind="MetaMask" address={evm.address} />
       ) : (
-        <Button variant="ghost" size="sm" onClick={connectEvm} disabled={connectingEvm}>
+        <Button variant="ghost" size="sm" loading={connectingEvm} onClick={connectEvm}>
           {connectingEvm ? "Connecting…" : "Connect MetaMask"}
         </Button>
       )}
       {gonka ? (
         <WalletChip kind="Keplr" address={gonka.address} />
       ) : (
-        <Button variant="ghost" size="sm" onClick={connectGonka} disabled={connectingGonka}>
+        <Button variant="ghost" size="sm" loading={connectingGonka} onClick={connectGonka}>
           {connectingGonka ? "Connecting…" : "Connect Keplr"}
         </Button>
       )}
