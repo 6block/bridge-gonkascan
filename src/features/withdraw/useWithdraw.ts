@@ -10,6 +10,7 @@ import {
 } from "@/lib/gonka";
 import { groupKeyToHex, thresholdSignatureToHex, validationSignatureToHex } from "@/lib/bls";
 import {
+  AlreadyProcessedError,
   getReadProvider,
   readBridgeState,
   submitGroupKey,
@@ -161,23 +162,42 @@ export function useWithdraw(
       // Use the token identity captured in the pending record, NOT the currently
       // selected token — on resume they can differ, which would call the wrong
       // contract method and strand the funds.
-      const ethereumTxHash =
-        p.tokenKind === "native"
-          ? await submitMint(provider, {
-              epochId: p.epochId,
-              requestId: p.requestIdHex,
-              recipient: p.destinationEth,
-              amount: BigInt(p.amount),
-              signature: p.signatureHex,
-            })
-          : await submitWithdraw(provider, {
-              epochId: p.epochId,
-              requestId: p.requestIdHex,
-              recipient: p.destinationEth,
-              tokenContract: p.tokenErc20,
-              amount: BigInt(p.amount),
-              signature: p.signatureHex,
-            });
+      let ethereumTxHash: string;
+      try {
+        ethereumTxHash =
+          p.tokenKind === "native"
+            ? await submitMint(provider, {
+                epochId: p.epochId,
+                requestId: p.requestIdHex,
+                recipient: p.destinationEth,
+                amount: BigInt(p.amount),
+                signature: p.signatureHex,
+              })
+            : await submitWithdraw(provider, {
+                epochId: p.epochId,
+                requestId: p.requestIdHex,
+                recipient: p.destinationEth,
+                tokenContract: p.tokenErc20,
+                amount: BigInt(p.amount),
+                signature: p.signatureHex,
+              });
+      } catch (err) {
+        // RequestAlreadyProcessed = this withdrawal already settled on-chain
+        // (e.g. a prior retry landed). Treat as success — funds are released.
+        if (err instanceof AlreadyProcessedError) {
+          const settled: PendingWithdraw = { ...p, step: "done" };
+          if (gonkaAddress) clearPending(gonkaAddress);
+          setState({
+            status: "success",
+            pending: settled,
+            ethereumTxHash: null,
+            note: "Already released on-chain — your tokens are in your wallet.",
+            error: null,
+          });
+          return;
+        }
+        throw err;
+      }
       const done: PendingWithdraw = { ...p, ethereumTxHash, step: "done" };
       if (gonkaAddress) clearPending(gonkaAddress);
       setState({ status: "success", pending: done, ethereumTxHash, note: null, error: null });

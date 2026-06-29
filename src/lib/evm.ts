@@ -80,18 +80,29 @@ export async function readBridgeState(provider: Provider): Promise<BridgeState> 
   };
 }
 
-// Custom-error selectors from BridgeContract.sol, lifted verbatim from the
-// official withdraw-tokens.js so reverts surface a human-readable cause.
+// Custom-error selectors computed from the actual BridgeContract ABI
+// (keccak256 of the error signature, first 4 bytes). The values in the official
+// withdraw-tokens.js were stale and did NOT match this contract — always derive
+// from the ABI.
+const ERR_REQUEST_ALREADY_PROCESSED = "0xa6bc74c4";
 const BRIDGE_ERROR_SELECTORS: Record<string, string> = {
-  "0x6f7c43c8": "BridgeNotOperational — contract is not in NORMAL_OPERATION",
-  "0x24d35a26": "InvalidEpoch — epoch has no group key / not found",
-  "0xd9a00c27": "RequestAlreadyProcessed — this requestId was already used",
+  "0x2745ed2e": "BridgeNotOperational — contract is not in NORMAL_OPERATION",
+  "0xd5b25b63": "InvalidEpoch — epoch has no group key / not found",
+  "0x2c5211c6": "InvalidAmount — amount is zero or invalid",
+  [ERR_REQUEST_ALREADY_PROCESSED]: "RequestAlreadyProcessed — this withdrawal was already completed",
   "0x8baa579f": "InvalidSignature — BLS signature verification failed",
-  "0x80e82c2d": "MustBeInAdminControl",
-  "0xa42e0c5b": "InvalidEpochSequence — epochs must be submitted sequentially",
-  "0x59c8e5f9": "NoValidGenesisEpoch",
-  "0x21f3c01d": "TimeoutNotReached",
+  "0x9d2a9928": "MustBeInAdminControl",
+  "0x4ee7e029": "InvalidEpochSequence — epochs must be submitted sequentially",
+  "0x89555472": "NoValidGenesisEpoch",
+  "0x9b0056ac": "TimeoutNotReached",
 };
+
+/** Selector for RequestAlreadyProcessed — the withdrawal already settled on-chain. */
+export function isAlreadyProcessed(err: unknown): boolean {
+  const e = err as { data?: string; info?: { error?: { data?: string } } };
+  const data = e?.data ?? e?.info?.error?.data;
+  return typeof data === "string" && data.slice(0, 10) === ERR_REQUEST_ALREADY_PROCESSED;
+}
 
 export interface WithdrawCommand {
   epochId: number;
@@ -102,7 +113,15 @@ export interface WithdrawCommand {
   signature: string; // 0x hex, 128 bytes
 }
 
-/** Release the ERC-20 on Sepolia with the validator BLS signature. */
+/** Thrown when the bridge reports the withdrawal was already settled on-chain. */
+export class AlreadyProcessedError extends Error {
+  constructor() {
+    super("RequestAlreadyProcessed");
+    this.name = "AlreadyProcessedError";
+  }
+}
+
+/** Release the ERC-20 with the validator BLS signature. */
 export async function submitWithdraw(
   provider: BrowserProvider,
   cmd: WithdrawCommand,
@@ -115,6 +134,7 @@ export async function submitWithdraw(
     const receipt = await tx.wait();
     return receipt?.hash ?? tx.hash;
   } catch (err) {
+    if (isAlreadyProcessed(err)) throw new AlreadyProcessedError();
     throw new Error(decodeBridgeError(err));
   }
 }
@@ -137,6 +157,7 @@ export async function submitMint(provider: BrowserProvider, cmd: MintCommand): P
     const receipt = await tx.wait();
     return receipt?.hash ?? tx.hash;
   } catch (err) {
+    if (isAlreadyProcessed(err)) throw new AlreadyProcessedError();
     throw new Error(decodeBridgeError(err));
   }
 }
