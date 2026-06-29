@@ -53,7 +53,7 @@
 .btn--primary {
   background: linear-gradient(180deg, var(--accent-strong), var(--accent));
   border-color: transparent;
-  color: oklch(18% 0.02 230);
+  color: var(--on-accent);
   box-shadow: 0 8px 24px -10px var(--accent-glow);
 }
 .btn--primary:hover:not(:disabled) {
@@ -129,10 +129,13 @@
   border-radius: var(--radius);
   background: var(--bg);
   padding: var(--space-3) var(--space-4);
-  transition: border-color var(--dur-fast) var(--ease);
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
 }
 .taf:focus-within {
   border-color: var(--accent);
+  box-shadow: 0 0 22px -6px var(--accent-glow);
 }
 .taf--disabled {
   opacity: 0.55;
@@ -155,15 +158,11 @@
 .taf__input::placeholder {
   color: var(--text-dim);
 }
-.taf__select {
-  background: var(--elevated);
-  color: var(--text);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
-  padding: 0.35rem 0.7rem;
-  font-weight: 600;
-  font-size: var(--text-sm);
-  cursor: pointer;
+/* The .taf container shows the focus state (border + glow); suppress the
+   global :focus-visible outline so the field isn't double-ringed. */
+.taf__input:focus,
+.taf__input:focus-visible {
+  outline: none;
 }
 .taf__meta {
   display: flex;
@@ -181,4 +180,138 @@
 }
 .taf__max:disabled {
   color: var(--text-dim);
+}
+
+/* custom token select */
+.tsel {
+  position: relative;
+  flex-shrink: 0;
+}
+.tsel__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.35rem 0.6rem 0.35rem 0.4rem;
+  background: var(--elevated);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease);
+}
+.tsel__trigger:hover:not(:disabled),
+.tsel__trigger--open {
+  border-color: var(--accent);
+}
+.tsel__trigger:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.tsel__sym {
+  letter-spacing: 0.01em;
+}
+.tsel__chev {
+  width: 12px;
+  height: 12px;
+  color: var(--text-muted);
+  transition: transform var(--dur-fast) var(--ease);
+}
+.tsel__trigger--open .tsel__chev {
+  transform: rotate(180deg);
+}
+
+.tsel__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: var(--z-dropdown);
+  min-width: 232px;
+  padding: var(--space-2);
+  margin: 0;
+  list-style: none;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+  animation: tsel-pop var(--dur-fast) var(--ease);
+}
+@keyframes tsel-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.tsel__opt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 0.55rem 0.6rem;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--dur-fast) var(--ease);
+}
+.tsel__opt:hover {
+  background: var(--elevated);
+}
+.tsel__opt--active {
+  background: var(--accent-dim);
+}
+.tsel__opt-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+.tsel__opt-sym {
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+.tsel__opt-name {
+  font-size: var(--text-xs);
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tsel__check {
+  width: 14px;
+  height: 14px;
+  margin-left: auto;
+  color: var(--accent-strong);
+  flex-shrink: 0;
+}
+
+/* token monogram */
+.tsel__glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--on-accent);
+  background: var(--accent);
+}
+.tsel__glyph--usdc {
+  background: oklch(62% 0.16 250);
+  color: oklch(98% 0 0);
+}
+.tsel__glyph--usdt {
+  background: oklch(68% 0.15 165);
+  color: oklch(18% 0.04 165);
 }

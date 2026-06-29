@@ -1,5 +1,6 @@
 import type { BridgeToken } from "@/config/chains";
 import { formatUnits } from "@/lib/format";
+import { TokenSelect } from "./TokenSelect";
 import "./ui.css";
 
 interface Props {
@@ -38,18 +39,12 @@ export function TokenAmountField({
           disabled={disabled}
           onChange={(e) => onAmountChange(e.target.value)}
         />
-        <select
-          className="taf__select"
-          value={token.symbol}
+        <TokenSelect
+          tokens={tokens}
+          token={token}
+          onTokenChange={onTokenChange}
           disabled={disabled}
-          onChange={(e) => onTokenChange(e.target.value)}
-        >
-          {tokens.map((t) => (
-            <option key={t.symbol} value={t.symbol}>
-              {t.symbol}
-            </option>
-          ))}
-        </select>
+        />
       </div>
       <div className="taf__meta">
         <span className="taf__bal">

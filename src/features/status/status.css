@@ -1,6 +1,7 @@
 .status__grid {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--space-6);
 }
 .status__row {
   display: flex;
@@ -10,8 +11,21 @@
   padding: var(--space-3) 0;
   border-bottom: 1px solid var(--border);
 }
-.status__row:last-child {
+/* Drop the rule on the last item of each column so neither column trails a line. */
+.status__row:last-child,
+.status__row:nth-last-child(2) {
   border-bottom: none;
+}
+@media (max-width: 640px) {
+  .status__grid {
+    grid-template-columns: 1fr;
+  }
+  .status__row:nth-last-child(2) {
+    border-bottom: 1px solid var(--border);
+  }
+  .status__row:last-child {
+    border-bottom: none;
+  }
 }
 .status__label {
   font-size: var(--text-sm);

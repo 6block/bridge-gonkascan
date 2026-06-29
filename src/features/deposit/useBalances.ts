@@ -49,6 +49,10 @@ export function useBalances(
   }, [token, evmAddress, gonkaAddress]);
 
   useEffect(() => {
+    // Clear stale balances first: keeping the previous token's raw value would
+    // briefly render it with the new token's decimals (e.g. GNK 0.7 shown as
+    // "700" before USDT's real balance lands). Show "—" until the load resolves.
+    setBalances({ evm: null, gonka: null });
     void load();
     const id = setInterval(() => void load(), 15_000);
     return () => clearInterval(id);

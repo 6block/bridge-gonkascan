@@ -23,6 +23,13 @@ export function WithdrawForm() {
   const [amount, setAmount] = useState("");
   const token = tokenBySymbol(symbol) ?? TOKENS[0];
 
+  // Switching token invalidates the typed amount (different decimals/balance).
+  const changeToken = (next: string) => {
+    if (next === symbol) return;
+    setSymbol(next);
+    setAmount("");
+  };
+
   const balances = useBalances(token, evm?.address ?? null, gonka?.address ?? null);
   const w = useWithdraw(
     token,
@@ -103,7 +110,7 @@ export function WithdrawForm() {
       <TokenAmountField
         tokens={TOKENS}
         token={token}
-        onTokenChange={setSymbol}
+        onTokenChange={changeToken}
         amount={amount}
         onAmountChange={setAmount}
         balance={balances.gonka}
